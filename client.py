@@ -25,8 +25,8 @@ def main(argv):
         if len(rcvd) != 16:
             break
 
-        time, value = struct.unpack("<QQ", rcvd)
-        print("%16d: %016x" % (time, value))
+        time, value = struct.unpack("<dQ", rcvd)
+        print("%5.10f: %016x" % (time, value))
 
     return 0
 

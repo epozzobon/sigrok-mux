@@ -19,7 +19,7 @@
 #define CLIENT_BUFF_SIZE 1000
 
 typedef struct client_sample {
-    uint64_t time;
+    double time;
     uint64_t value;
 } client_sample_t;
 
@@ -79,7 +79,7 @@ static void poll_clients() {
         }
     }
 
-    struct timeval timeout = { };
+    struct timeval timeout = { 0 };
     int res = select(max_socket+1, &readfds, NULL, NULL, &timeout);
     if (res == -1) {
         perror("select clients failed");
@@ -150,9 +150,9 @@ static void poll_clients() {
 }
 
 
-void on_capture_change(uint64_t idx, uint64_t prev, uint64_t unit) {
+void on_capture_change(double time, uint64_t prev, uint64_t unit) {
     pthread_mutex_lock(&clients_mutex);
-    printf("%lu, %lx, %lx\n", idx, prev, unit);
+    printf("%lf, %lx, %lx\n", time, prev, unit);
     uint64_t diff = prev ^ unit;
     for (client_t *c = clients_head.lh_first; c != NULL; c = c->entries.le_next) {
         uint64_t mask = c->mask;
@@ -163,7 +163,7 @@ void on_capture_change(uint64_t idx, uint64_t prev, uint64_t unit) {
             fprintf(stderr, "\nBUFFER OVERFLOW FOR CLIENT %d\n", c->sock);
             c->closing = true;
         }
-        client_sample_t sample = { .time = idx, .value = value };
+        client_sample_t sample = { .time = time, .value = value };
         c->buffer[c->buffer_idx++] = sample;
     }
     pthread_mutex_unlock(&clients_mutex);

@@ -3,7 +3,7 @@ INCLUDE_FLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/inclu
 PKG_CONFIG_LIBS=glib-2.0 libsigrok
 PKG_CONFIG_CFLAGS=
 PKG_CONFIG=$(shell pkg-config --cflags $(PKG_CONFIG_CFLAGS) --libs $(PKG_CONFIG_LIBS))
-CFLAGS=-g -Wall -Wextra $(PKG_CONFIG) $(INCLUDE_FLAGS) -lpthread
+CFLAGS=-O3 -std=c18 -Wall -Wextra -Werror $(PKG_CONFIG) $(INCLUDE_FLAGS) -lpthread -pedantic
 
 all: build/sigrok-mux
 

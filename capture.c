@@ -223,17 +223,20 @@ static void FUNCTION_NAME(struct state *s, const DATA_T *data,                \
     uint64_t diffs = 0;                                                       \
     DATA_T prev = (DATA_T) s->prev;                                           \
     uint64_t idx = s->idx;                                                    \
-    for (uint64_t i = 1; i < length / 2; i++) {                               \
-        DATA_T unit = data[i] & mask;                                         \
-        idx++;                                                                \
-        if (unit != prev) {                                                   \
-            on_capture_change(idx, prev, unit);                               \
+    uint64_t count = length / 2;                                              \
+    uint64_t i;                                                               \
+    for (i = 0; i < count; i++) {                                             \
+        DATA_T unit = data[i];                                                \
+        if (unit != prev && (unit & mask) != prev) {                          \
+            double time = idx + i;                                            \
+            time /= SAMPLERATE;                                               \
+            on_capture_change(time, prev, unit);                              \
             diffs++;                                                          \
+            prev = unit;                                                      \
         }                                                                     \
-        prev = unit;                                                          \
     }                                                                         \
     s->prev = prev;                                                           \
-    s->idx = idx;                                                             \
+    s->idx = idx + i;                                                         \
                                                                               \
     if (diffs != 0) {                                                         \
         fprintf(stderr, "\033[1;34m");                                        \
@@ -243,9 +246,9 @@ static void FUNCTION_NAME(struct state *s, const DATA_T *data,                \
                                                                               \
 }                                                                             \
 
-ON_LOGIC_FRAME(on_logic_frame_8, uint8_t);
-ON_LOGIC_FRAME(on_logic_frame_16, uint16_t);
-ON_LOGIC_FRAME(on_logic_frame_32, uint32_t);
+ON_LOGIC_FRAME(on_logic_frame_8, uint8_t)
+ON_LOGIC_FRAME(on_logic_frame_16, uint16_t)
+ON_LOGIC_FRAME(on_logic_frame_32, uint32_t)
 
 static void on_session_datafeed(const struct sr_dev_inst *dev,
                          const struct sr_datafeed_packet *packet, void *data) {
