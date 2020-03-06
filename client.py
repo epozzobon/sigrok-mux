@@ -26,7 +26,7 @@ def main(argv):
             break
 
         time, value = struct.unpack("<dQ", rcvd)
-        print("%5.10f: %016x" % (time, value))
+        print("%16.10f: %016x" % (time, value))
 
     return 0
 

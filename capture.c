@@ -346,9 +346,14 @@ void capture_init() {
     enumerate_device_options("Device", s->driver, s->device, NULL);
     assert_sr(sr_dev_open(s->device), "opening device");
 
+    uint16_t channels_mask = 0x0aaa;
     channels = get_device_channels(s->device, &s->num_channels);
     for (unsigned int i = 0; i < s->num_channels; i++) {
-        assert_sr(sr_dev_channel_enable(channels[i], true), "enabling channel");
+        if ((channels_mask >> i) & 1) {
+            assert_sr(sr_dev_channel_enable(channels[i], true), "enabling channel");
+        } else {
+            assert_sr(sr_dev_channel_enable(channels[i], false), "disabling channel");
+        }
     }
 
     gvar = g_variant_new_uint64(SAMPLERATE);

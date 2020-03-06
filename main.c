@@ -151,10 +151,12 @@ static void poll_clients() {
 
 
 void on_capture_change(double time, uint64_t prev, uint64_t unit) {
-    pthread_mutex_lock(&clients_mutex);
+    client_t *c;
     printf("%lf, %lx, %lx\n", time, prev, unit);
     uint64_t diff = prev ^ unit;
-    for (client_t *c = clients_head.lh_first; c != NULL; c = c->entries.le_next) {
+
+    pthread_mutex_lock(&clients_mutex);
+    LIST_FOREACH(c, &clients_head, entries) {
         uint64_t mask = c->mask;
         if (!(mask & diff)) { continue; }
         uint64_t value = unit & mask;
@@ -227,6 +229,10 @@ static void sig_handler(int signo)
 int main(int argc, char **argv) {
     UNUSED(argc);
     UNUSED(argv);
+
+    char *socket_path = "./socket";
+    struct sockaddr_un addr;
+
     LIST_INIT(&clients_head);
     if (0 != pthread_mutex_init(&clients_mutex, NULL)) {
         fprintf(stderr, "\ncan't make mutex\n");
@@ -234,7 +240,9 @@ int main(int argc, char **argv) {
     }
 
     for (int i = 0; i < argc; i++) {
-
+        if (i == 1) {
+            socket_path = argv[i];
+        }
     }
 
     server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -255,11 +263,15 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    unlink("socket");
-    strncpy(addr.sun_path, "socket", sizeof(addr.sun_path)-1);
+    strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
+    if (0 != strncmp(socket_path, addr.sun_path, sizeof(addr.sun_path)-1)) {
+        fprintf(stderr, "\nstrncpy failed\n");
+        exit(1);
+    }
+    
+    unlink(addr.sun_path);
     if (0 != bind(server_socket, (struct sockaddr*)&addr, sizeof(addr))) {
         perror("bind failed");
         exit(1);
@@ -301,7 +313,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
-    unlink("socket");
+    unlink(addr.sun_path);
     exit(0);
 }
 
